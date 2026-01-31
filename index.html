@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Clipboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            
+            <div class="text-center mb-4">
+                <h1>Universal Clipboard</h1>
+                <p class="text-muted">Share text and images across devices instantly.</p>
+            </div>
+
+            <!-- Room Selection -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-2">
+                    <label for="roomInput" class="fw-bold text-nowrap">Room Name:</label>
+                    <input type="text" id="roomInput" class="form-control" placeholder="Enter room name... (or leave empty for random)">
+                    <button id="joinBtn" class="btn btn-primary">Join / Reset</button>
+                </div>
+            </div>
+
+            <!-- Content Display Area -->
+            <div class="card mb-4 shadow-sm" style="min-height: 200px;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Current Clipboard Content</span>
+                    <span id="statusIndicator" class="badge bg-secondary">Waiting...</span>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center bg-white" id="displayArea">
+                    <p class="text-muted">Waiting for content...</p>
+                </div>
+                <div class="card-footer text-end">
+                    <button id="copyBtn" class="btn btn-outline-primary btn-sm">Copy to Device Clipboard</button>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="card shadow-sm">
+                <div class="card-header fw-bold">Send New Content</div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-pane" type="button" role="tab">Text</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-pane" type="button" role="tab">Image</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="myTabContent">
+                        <!-- Text Input -->
+                        <div class="tab-pane fade show active" id="text-pane" role="tabpanel">
+                            <textarea id="textInput" class="form-control mb-3" rows="3" placeholder="Paste text here to send..."></textarea>
+                            <button id="sendTextBtn" class="btn btn-success w-100">Send Text</button>
+                        </div>
+                        
+                        <!-- Image Input -->
+                        <div class="tab-pane fade" id="image-pane" role="tabpanel">
+                            <div class="mb-3">
+                                <input class="form-control" type="file" id="fileInput" accept="image/*">
+                            </div>
+                            <div class="text-center mb-3">
+                                <span class="text-muted">Or paste image directly (Ctrl+V) anywhere on page</span>
+                            </div>
+                            <button id="sendImageBtn" class="btn btn-success w-100">Send Image</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

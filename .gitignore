@@ -1,0 +1,10 @@
+# Exclude session data and uploaded images
+data/*.json
+data/uploads/*
+
+# Except for .gitkeep files (to keep the directories in the repo)
+!data/.gitkeep
+!data/uploads/.gitkeep
+
+# Exclude server logs
+server.log

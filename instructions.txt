@@ -1,0 +1,36 @@
+# Application Instructions
+
+## 1. Application Overview
+- **Type:** Web Application (PHP Backend)
+- **Name:** Universal Web Clipboard (PHP Edition)
+- **Purpose:** Allows users to copy text or images on one computer and retrieve them on another device via a central server.
+- **Key Constraint:** Must be easy to deploy (drop files on server).
+
+## 2. Core Features
+- **Shared Sessions:** Users connect to a specific "Room" or "Session ID".
+- **Clipboard Sync:**
+    - **Text:** Shared plain text or rich text.
+    - **Images:** Upload and display images.
+- **Mechanism:**
+    - **Push:** Client sends data to the PHP server.
+    - **Pull:** Client polls the PHP server to check for new updates.
+
+## 3. Technology Stack
+- **Frontend:** HTML5, JavaScript (Fetch API), Bootstrap 5 (UI).
+- **Backend:** PHP (Vanilla, no frameworks).
+- **Storage:**
+    - **Session Data:** JSON Files (e.g., `data/room.json`).
+    - **Images:** Physical files stored in `data/uploads/` (referenced by path in JSON).
+
+## 4. User Experience (UX) & Design
+- **Visual Style:** Clean, utilitarian, centered layout (Bootstrap).
+- **Interaction:**
+    1. Enter a "Room Name" (e.g., "my-files"). If empty, a random room is generated on startup or when clicking "Join".
+    2. Interface splits into "Clipboard Content" and "Input Area".
+    3. Pasting an image ANYWHERE auto-uploads it. Pasting text pre-fills the input box (requires manual send).
+    4. Other users in "my-files" see the content update automatically (via polling).
+
+## 5. Additional Constraints
+- **Security:** Basic sanitization to prevent XSS. Check file extensions.
+- **Documentation:** `README.md` must be strict, technical, and free of marketing fluff.
+- **Cleanup:** (Optional - Not Implemented) Old files auto-deleted after X hours to save space.
