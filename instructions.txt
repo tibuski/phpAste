@@ -10,7 +10,7 @@
 - **Shared Sessions:** Users connect to a specific "Room" or "Session ID".
 - **Clipboard Sync:**
     - **Text:** Shared plain text or rich text.
-    - **Images:** Upload and display images.
+    - **Files:** Upload and display files (Images, PDFs, Archives, etc.) with download links.
 - **Mechanism:**
     - **Push:** Client sends data to the PHP server.
     - **Pull:** Client polls the PHP server to check for new updates.
@@ -20,15 +20,16 @@
 - **Backend:** PHP (Vanilla, no frameworks).
 - **Storage:**
     - **Session Data:** JSON Files (e.g., `data/room.json`).
-    - **Images:** Physical files stored in `data/uploads/` (referenced by path in JSON).
+    - **Files:** Physical files stored in `data/uploads/` (referenced by path in JSON).
 
 ## 4. User Experience (UX) & Design
 - **Visual Style:** Clean, utilitarian, centered layout (Bootstrap).
 - **Interaction:**
     1. Enter a "Room Name" (e.g., "my-files"). If empty, a random room is generated on startup or when clicking "Join".
     2. Interface splits into "Clipboard Content" and "Input Area".
-    3. Pasting an image ANYWHERE auto-uploads it. Pasting text pre-fills the input box (requires manual send).
-    4. Other users in "my-files" see the content update automatically (via polling).
+    3. Pasting a file ANYWHERE auto-uploads it. Pasting text pre-fills the input box (requires manual send).
+    4. New content is appended to the room's history (multi-item support).
+    5. Users can click filenames to download them. Images show a preview.
 
 ## 5. Additional Constraints
 - **Security:** Basic sanitization to prevent XSS. Check file extensions.

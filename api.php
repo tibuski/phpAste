@@ -24,9 +24,16 @@ $file = getRoomFile($room);
 
 if ($action === 'get') {
     if (file_exists($file)) {
-        echo file_get_contents($file);
+        $content = file_get_contents($file);
+        // Backward compatibility: if it's a single object, wrap it in an array
+        $data = json_decode($content, true);
+        if (isset($data['content'])) {
+            echo json_encode([$data]);
+        } else {
+            echo $content;
+        }
     } else {
-        echo json_encode(['content' => '', 'type' => 'text', 'timestamp' => 0]);
+        echo json_encode([]);
     }
     exit;
 }
@@ -34,19 +41,31 @@ if ($action === 'get') {
 if ($action === 'post') {
     $input = json_decode(file_get_contents('php://input'), true);
     
-    $data = [
+    $newItem = [
         'content' => $input['content'] ?? '',
         'type' => $input['type'] ?? 'text', // 'text' or 'image'
         'timestamp' => time()
     ];
 
-    file_put_contents($file, json_encode($data));
+    $currentData = [];
+    if (file_exists($file)) {
+        $decoded = json_decode(file_get_contents($file), true);
+        if (is_array($decoded)) {
+            if (isset($decoded['content'])) { $currentData[] = $decoded; } // Legacy
+            else { $currentData = $decoded; }
+        }
+    }
+    
+    $currentData[] = $newItem;
+    if (count($currentData) > 50) $currentData = array_slice($currentData, -50);
+
+    file_put_contents($file, json_encode($currentData));
     echo json_encode(['status' => 'success']);
     exit;
 }
 
 if ($action === 'upload') {
-    // Handle file upload (images)
+    // Handle file upload (generic files)
     if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
         $uploadsDir = $dataDir . '/uploads';
         if (!is_dir($uploadsDir)) {
@@ -57,29 +76,42 @@ if ($action === 'upload') {
         $originalName = basename($_FILES['file']['name']);
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         
-        // Simple validation
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-        if (!in_array($ext, $allowed)) {
+        // Extended validation: Allow common safe types, block executable scripts
+        $blocked = ['php', 'php3', 'php4', 'php5', 'phtml', 'exe', 'pl', 'py', 'cgi', 'sh', 'bat'];
+        if (in_array($ext, $blocked)) {
             http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid file type']);
+            echo json_encode(['status' => 'error', 'message' => 'File type not allowed for security reasons']);
             exit;
         }
 
         // Generate unique filename to prevent overwrites
-        $filename = uniqid('img_') . '.' . $ext;
+        $filename = uniqid('file_') . '.' . $ext;
         $destination = $uploadsDir . '/' . $filename;
 
         if (move_uploaded_file($tmpName, $destination)) {
             // Save relative path for the frontend
             $webPath = 'data/uploads/' . $filename;
             
-            $data = [
+            $newItem = [
                 'content' => $webPath,
-                'type' => 'image',
+                'type' => 'file',
+                'original_name' => $originalName,
                 'timestamp' => time()
             ];
             
-            file_put_contents($file, json_encode($data));
+            $currentData = [];
+            if (file_exists($file)) {
+                $decoded = json_decode(file_get_contents($file), true);
+                if (is_array($decoded)) {
+                    if (isset($decoded['content'])) { $currentData[] = $decoded; } // Legacy
+                    else { $currentData = $decoded; }
+                }
+            }
+            
+            $currentData[] = $newItem;
+            if (count($currentData) > 50) $currentData = array_slice($currentData, -50);
+            
+            file_put_contents($file, json_encode($currentData));
             echo json_encode(['status' => 'success']);
         } else {
              http_response_code(500);

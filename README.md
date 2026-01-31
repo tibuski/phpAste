@@ -1,55 +1,63 @@
-# Universal Web Clipboard
+# Universal Web Clipboard (PHP Edition)
 
-A lightweight, PHP-based web application for sharing text and images between devices on a local network or public server. It uses a file-based JSON storage mechanism (no database required).
+A lightweight, vanilla PHP application for cross-device sharing of text and files via shared rooms. Uses flat-file JSON storage for session history and filesystem storage for uploaded assets.
 
 ## Architecture
 
-*   **Frontend:** HTML5, Bootstrap 5, Vanilla JavaScript.
-*   **Backend:** Single PHP file (`api.php`).
-*   **Storage:** Flat JSON files in `data/` and image files in `data/uploads/`.
-*   **Communication:** Client polls the server (long-polling/interval) for `timestamp` changes.
+*   **Frontend:** HTML5, Bootstrap 5, Vanilla JavaScript (Fetch API).
+*   **Backend:** Vanilla PHP (`api.php`).
+*   **Storage:** 
+    *   **Metadata:** JSON arrays in `data/{room_name}.json`.
+    *   **Assets:** Physical files in `data/uploads/`.
+*   **Synchronization:** Client-side interval polling (2s) tracking item `timestamp` changes.
+
+## Features
+
+*   **Multi-Item History:** Rooms maintain a history of the last 50 entries.
+*   **Generic File Support:** Upload and download any non-executable file type.
+*   **Image Previews:** Automatic rendering of common image formats.
+*   **Auto-Generation:** Random room IDs generated on startup or empty join.
+*   **Global Paste:** Intercepts system paste events to auto-upload files or pre-fill text.
 
 ## Directory Structure
 
 ```
 .
-├── api.php          # Handles GET/POST requests and file operations
-├── index.html       # Client-side UI
-├── script.js        # Frontend logic (polling, fetch, DOM manipulation)
-├── style.css        # Custom styles
-├── instructions.txt # Project requirements
-└── data/            # (Created on runtime) Stores session JSONs
-    └── uploads/     # Stores uploaded image files
+├── api.php          # RESTful API handler
+├── index.html       # UI Shell
+├── script.js        # Polling and DOM synchronization logic
+├── style.css        # UI refinements
+├── instructions.txt # Development requirements
+├── data/            # Room JSON storage (git-ignored)
+    └── uploads/     # Uploaded file assets (git-ignored)
 ```
 
-## Setup & Deployment
+## Setup
 
-1.  **Requirements:**
-    *   PHP 7.4+
-    *   Write permissions for the web server on the project directory (to create `data/`).
+1.  **Requirements:** PHP 7.4+
+2.  **Deployment:** Drop all files into a PHP-enabled web directory.
+3.  **Permissions:** Ensure the server has write access to the root directory (to create/populate `data/`).
 
-2.  **Installation:**
-    *   Copy all files to your web server's public directory.
-    *   Ensure the web server user (e.g., `www-data`) can write to the directory.
+## API Specification
 
-3.  **Local Development:**
-    Run the built-in PHP server:
-    ```bash
-    php -S localhost:8000
+### GET `?action=get&room={name}`
+Returns an array of items for the specified room.
+*   **Response:** `JSON Array<Object>`
+*   **Item Schema:**
+    ```json
+    {
+      "content": "path/to/file or text string",
+      "type": "text | file",
+      "original_name": "filename.ext (for files)",
+      "timestamp": 1706712345
+    }
     ```
-    Access via `http://localhost:8000`.
 
-## API Endpoints
+### POST `?action=post&room={name}`
+Appends a text entry to the room history.
+*   **Payload:** `JSON { "content": "string", "type": "text" }`
 
-**GET** `?action=get&room={name}`
-*   Returns the current content of the specified room.
-*   Response: JSON `{ "content": "...", "type": "text|image", "timestamp": 123456 }`
-
-**POST** `?action=post&room={name}`
-*   Updates the room with text content.
-*   Payload: JSON `{ "content": "hello world", "type": "text" }`
-
-**POST** `?action=upload&room={name}`
-*   Uploads an image file.
-*   Payload: `multipart/form-data` with field `file`.
-*   Server saves file to `data/uploads/` and updates room JSON with the relative path.
+### POST `?action=upload&room={name}`
+Appends a file entry to the room history.
+*   **Payload:** `multipart/form-data` (Field: `file`).
+*   **Security:** Blocks executable extensions (php, exe, sh, etc.).

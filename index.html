@@ -50,7 +50,7 @@
                             <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-pane" type="button" role="tab">Text</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-pane" type="button" role="tab">Image</button>
+                            <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-pane" type="button" role="tab">File</button>
                         </li>
                     </ul>
                     
@@ -61,15 +61,15 @@
                             <button id="sendTextBtn" class="btn btn-success w-100">Send Text</button>
                         </div>
                         
-                        <!-- Image Input -->
+                        <!-- File Input -->
                         <div class="tab-pane fade" id="image-pane" role="tabpanel">
                             <div class="mb-3">
-                                <input class="form-control" type="file" id="fileInput" accept="image/*">
+                                <input class="form-control" type="file" id="fileInput">
                             </div>
                             <div class="text-center mb-3">
-                                <span class="text-muted">Or paste image directly (Ctrl+V) anywhere on page</span>
+                                <span class="text-muted">Or paste file/image directly (Ctrl+V) anywhere</span>
                             </div>
-                            <button id="sendImageBtn" class="btn btn-success w-100">Send Image</button>
+                            <button id="sendFileBtn" class="btn btn-success w-100">Send File</button>
                         </div>
                     </div>
                 </div>
