@@ -50,6 +50,14 @@ async function fetchContent() {
     const room = roomInput.value;
     try {
         const response = await fetch(`api.php?action=get&room=${room}`);
+        
+        if (!response.ok) {
+            console.error('Server error:', response.status);
+            statusIndicator.textContent = 'Error';
+            statusIndicator.className = 'badge bg-danger';
+            return;
+        }
+        
         const data = await response.json(); // Array of items
 
         if (!Array.isArray(data) || data.length === 0) {
@@ -156,16 +164,24 @@ async function sendText() {
     statusIndicator.textContent = 'Sending...';
     
     try {
-        await fetch(`api.php?action=post&room=${room}`, {
+        const response = await fetch(`api.php?action=post&room=${room}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: content, type: 'text' })
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Send error:', errorData);
+            flashStatus('Send Failed', 'danger');
+            return;
+        }
+        
         textInput.value = ''; // Clear input
         fetchContent(); // Update immediately
     } catch (err) {
-        console.error(err);
-        flashStatus('Error', 'danger');
+        console.error('Network error:', err);
+        flashStatus('Network Error', 'danger');
     }
 }
 
@@ -185,14 +201,22 @@ async function sendFile(file) {
     formData.append('file', file, fileName);
 
     try {
-        await fetch(`api.php?action=upload&room=${room}`, {
+        const response = await fetch(`api.php?action=upload&room=${room}`, {
             method: 'POST',
             body: formData
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Upload error:', errorData);
+            flashStatus(errorData.message || 'Upload Failed', 'danger');
+            return;
+        }
+        
         fileInput.value = ''; // Clear input
         fetchContent();
     } catch (err) {
-        console.error(err);
+        console.error('Network error:', err);
         flashStatus('Upload Error', 'danger');
     }
 }

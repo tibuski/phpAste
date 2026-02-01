@@ -1,0 +1,31 @@
+# Universal Web Clipboard - Apache Configuration
+
+# Deny access to data directory for security
+<Directory "data">
+    Require all denied
+</Directory>
+
+# Allow access to uploaded files but prevent execution
+<Directory "data/uploads">
+    # Allow reading files but prevent PHP execution
+    <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|cgi|sh)$">
+        Require all denied
+    </FilesMatch>
+    
+    # Allow other files to be downloaded
+    Require all granted
+    
+    # Prevent directory listing
+    Options -Indexes
+</Directory>
+
+# Set upload limits (adjust as needed)
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value max_execution_time 30
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

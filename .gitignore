@@ -1,10 +1,22 @@
-# Exclude session data and uploaded images
+# Data directory - contains room JSON files and uploads
+data/
 data/*.json
 data/uploads/*
 
-# Except for .gitkeep files (to keep the directories in the repo)
+# Keep the data directory structure in git
 !data/.gitkeep
 !data/uploads/.gitkeep
 
-# Exclude server logs
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Server logs
 server.log

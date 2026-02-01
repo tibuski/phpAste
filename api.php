@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 // Configuration
 $dataDir = __DIR__ . '/data';
 if (!is_dir($dataDir)) {
-    mkdir($dataDir, 0777, true);
+    mkdir($dataDir, 0755, true);
 }
 
 // Helper to sanitize room names
@@ -25,8 +25,20 @@ $file = getRoomFile($room);
 if ($action === 'get') {
     if (file_exists($file)) {
         $content = file_get_contents($file);
+        if ($content === false) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to read room data']);
+            exit;
+        }
+        
         // Backward compatibility: if it's a single object, wrap it in an array
         $data = json_decode($content, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid JSON in room data']);
+            exit;
+        }
+        
         if (isset($data['content'])) {
             echo json_encode([$data]);
         } else {
@@ -39,7 +51,14 @@ if ($action === 'get') {
 }
 
 if ($action === 'post') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid JSON in request body']);
+        exit;
+    }
     
     $newItem = [
         'content' => $input['content'] ?? '',
@@ -49,8 +68,15 @@ if ($action === 'post') {
 
     $currentData = [];
     if (file_exists($file)) {
-        $decoded = json_decode(file_get_contents($file), true);
-        if (is_array($decoded)) {
+        $fileContent = file_get_contents($file);
+        if ($fileContent === false) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to read room data']);
+            exit;
+        }
+        
+        $decoded = json_decode($fileContent, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             if (isset($decoded['content'])) { $currentData[] = $decoded; } // Legacy
             else { $currentData = $decoded; }
         }
@@ -59,7 +85,13 @@ if ($action === 'post') {
     $currentData[] = $newItem;
     if (count($currentData) > 50) $currentData = array_slice($currentData, -50);
 
-    file_put_contents($file, json_encode($currentData));
+    $result = file_put_contents($file, json_encode($currentData));
+    if ($result === false) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to write room data']);
+        exit;
+    }
+    
     echo json_encode(['status' => 'success']);
     exit;
 }
@@ -69,7 +101,11 @@ if ($action === 'upload') {
     if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
         $uploadsDir = $dataDir . '/uploads';
         if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0777, true);
+            if (!mkdir($uploadsDir, 0755, true)) {
+                http_response_code(500);
+                echo json_encode(['status' => 'error', 'message' => 'Failed to create uploads directory']);
+                exit;
+            }
         }
 
         $tmpName = $_FILES['file']['tmp_name'];
@@ -101,17 +137,26 @@ if ($action === 'upload') {
             
             $currentData = [];
             if (file_exists($file)) {
-                $decoded = json_decode(file_get_contents($file), true);
-                if (is_array($decoded)) {
-                    if (isset($decoded['content'])) { $currentData[] = $decoded; } // Legacy
-                    else { $currentData = $decoded; }
+                $fileContent = file_get_contents($file);
+                if ($fileContent !== false) {
+                    $decoded = json_decode($fileContent, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        if (isset($decoded['content'])) { $currentData[] = $decoded; } // Legacy
+                        else { $currentData = $decoded; }
+                    }
                 }
             }
             
             $currentData[] = $newItem;
             if (count($currentData) > 50) $currentData = array_slice($currentData, -50);
             
-            file_put_contents($file, json_encode($currentData));
+            $result = file_put_contents($file, json_encode($currentData));
+            if ($result === false) {
+                http_response_code(500);
+                echo json_encode(['status' => 'error', 'message' => 'Failed to save file metadata']);
+                exit;
+            }
+            
             echo json_encode(['status' => 'success']);
         } else {
              http_response_code(500);

@@ -13,7 +13,7 @@
     - **Files:** Upload and display files (Images, PDFs, Archives, etc.) with download links.
 - **Mechanism:**
     - **Push:** Client sends data to the PHP server.
-    - **Pull:** Client polls the PHP server to check for new updates.
+    - **Pull:** Client polls the PHP server to check for new updates (2-second interval).
 
 ## 3. Technology Stack
 - **Frontend:** HTML5, JavaScript (Fetch API), Bootstrap 5 (UI).
@@ -31,7 +31,140 @@
     4. New content is appended to the room's history (multi-item support).
     5. Users can click filenames to download them. Images show a preview.
 
-## 5. Additional Constraints
-- **Security:** Basic sanitization to prevent XSS. Check file extensions.
+## 5. Security Requirements
+
+### 5.1 Input Validation
+- **Room Names:** Sanitize to allow only alphanumeric characters and hyphens. Reject special characters to prevent directory traversal.
+- **File Extensions:** Block executable types: `php`, `php3`, `php4`, `php5`, `phtml`, `exe`, `pl`, `py`, `cgi`, `sh`, `bat`.
+- **File Size Limits:** Enforce upload limit (recommended: 10MB max via `upload_max_filesize` and `post_max_size` in php.ini).
+
+### 5.2 XSS Prevention
+- **Output Encoding:** 
+    - Display user text content using `textContent` (JavaScript) to prevent HTML injection.
+    - Never use `innerHTML` for user-generated content unless explicitly sanitized.
+- **JSON Responses:** Use `header('Content-Type: application/json')` to prevent content-type sniffing attacks.
+
+### 5.3 File Security
+- **Unique Filenames:** Generate unique filenames using `uniqid()` to prevent overwrites and predictable paths.
+- **File Permissions:** 
+    - Directories: `0755` (not `0777`) for production environments.
+    - Files: Default permissions, never executable.
+- **Path Sanitization:** Use `basename()` on uploaded filenames to strip directory components.
+
+### 5.4 CSRF Considerations
+- Not implemented for simplicity (public clipboard model).
+- Future enhancement: Add token-based authentication for private rooms.
+
+### 5.5 Rate Limiting
+- Not implemented (low-priority for private deployments).
+- Future enhancement: Track requests per IP to prevent abuse.
+
+## 6. Error Handling Standards
+
+### 6.1 HTTP Status Codes
+- **200 OK:** Successful GET/POST operations.
+- **400 Bad Request:** Invalid file type, missing required parameters, upload errors.
+- **500 Internal Server Error:** File write failures, server misconfigurations.
+
+### 6.2 Error Response Format
+```json
+{
+    "status": "error",
+    "message": "Human-readable error description"
+}
+```
+
+### 6.3 Client-Side Error Handling
+- **Network Failures:** Display "Offline" badge and retry polling.
+- **Upload Errors:** Show error message via `flashStatus()` function.
+- **Console Logging:** Log all fetch errors to browser console for debugging.
+
+### 6.4 PHP Error Handling
+- Use proper error checking for `file_exists()`, `file_get_contents()`, `move_uploaded_file()`.
+- Validate JSON decoding with `json_decode()` error checks.
+
+## 7. Performance Specifications
+
+### 7.1 Polling Configuration
+- **Interval:** 2000ms (2 seconds) - configurable in `script.js`.
+- **Trade-offs:** 
+    - Lower = faster updates, higher server load.
+    - Higher = lower server load, slower synchronization.
+
+### 7.2 Data Limits
+- **History Per Room:** Maximum 50 items (auto-trimmed using `array_slice()`).
+- **Reason:** Prevents unbounded JSON file growth and maintains fast parsing.
+
+### 7.3 Timestamp Tracking
+- Use Unix timestamps (`time()` in PHP, `timestamp * 1000` in JS).
+- Client tracks `currentTimestamp` to detect new items without deep comparison.
+
+## 8. Deployment Requirements
+
+### 8.1 Server Requirements
+- **PHP Version:** 7.4+ (8.0+ recommended).
+- **Extensions:** Standard PHP installation (no additional extensions required).
+- **Web Server:** Apache, Nginx, or any PHP-capable server.
+
+### 8.2 File Permissions
+```bash
+# Secure setup (production)
+chmod 755 data/
+chmod 755 data/uploads/
+chmod 644 data/*.json
+
+# Development (permissive, not recommended for production)
+chmod 777 data/
+chmod 777 data/uploads/
+```
+
+### 8.3 .gitignore Configuration
+```
+data/
+data/*.json
+data/uploads/*
+!data/.gitkeep
+```
+
+### 8.4 Web Server Configuration
+- **Apache:** Works out-of-the-box. Optional: Add `.htaccess` to prevent direct access to `data/` directory.
+- **Nginx:** Configure PHP-FPM and deny access to `data/` directory in nginx.conf.
+
+### 8.5 PHP Configuration (php.ini)
+```ini
+upload_max_filesize = 10M
+post_max_size = 10M
+max_execution_time = 30
+```
+
+## 9. Code Quality Standards
+
+### 9.1 API Response Structure
+All endpoints must return valid JSON with consistent structure:
+```json
+// Success
+{"status": "success", ...optional_data}
+
+// Error
+{"status": "error", "message": "Description"}
+
+// Data retrieval
+[{"content": "...", "type": "text|file", "timestamp": 1234567890, ...}]
+```
+
+### 9.2 JavaScript Standards
+- Use `async/await` for fetch operations.
+- Use `try/catch` blocks for error handling.
+- Use `const` and `let` (never `var`).
+- Use `document.getElementById()` or `querySelector()` for DOM access.
+
+### 9.3 PHP Standards
+- Validate all input parameters (`$_GET`, `$_POST`, `$_FILES`).
+- Use `exit` or `die` after sending API responses to prevent additional output.
+- Use `json_encode()` and `json_decode()` with error checking.
+- Use global `$dataDir` variable for consistent path management.
+
+## 10. Additional Constraints
 - **Documentation:** `README.md` must be strict, technical, and free of marketing fluff.
-- **Cleanup:** (Optional - Not Implemented) Old files auto-deleted after X hours to save space.
+- **Backward Compatibility:** Support legacy single-object JSON format (auto-wrap in array).
+- **Cleanup:** Future enhancement - implement TTL-based file cleanup (e.g., delete files older than 24 hours).
